@@ -1,32 +1,26 @@
 export const createScrollytellingPrompt = (csvContent: string, fileName: string): string => {
-  return `You are an expert data storyteller and web developer. I have uploaded a CSV file named "${fileName}" with the following content:
+  return `You are an expert web developer and data storyteller. Generate a **fully working HTML page** for scrollytelling using this CSV data:
 
+CSV File: "${fileName}"
+Content:
 ${csvContent}
 
-Please create a complete, self-contained HTML file that tells a compelling scrollytelling story about this data. The HTML should:
+Requirements:
 
-1. **Be completely self-contained** - include all CSS and JavaScript inline, no external dependencies
-2. **Create a scrollytelling experience** - content reveals as the user scrolls down
-3. **Include data visualizations** - use Chart.js (via CDN) or D3.js (via CDN) or pure CSS/SVG for charts
-4. **Have these sections:**
-   - Hero section with compelling title and overview
-   - Key insights sections (3-5 major findings)
-   - Interactive charts and visualizations
-   - Data exploration section with filterable/sortable table
-   - Conclusion with takeaways
-5. **Modern, beautiful design** - use a clean, professional aesthetic
-6. **Responsive layout** - works on mobile and desktop
-7. **Smooth animations** - fade-ins, slide-ups as content enters viewport
-8. **Include the raw data** - embed the CSV data in JavaScript for interactivity
+1. Complete, self-contained HTML5 file with **inline CSS and JavaScript only**.
+2. Sections:
+   - Hero: page title and brief overview.
+   - Key Insights (3–5 major findings), each with charts or visuals.
+   - Data Exploration: filterable and sortable table of the CSV data.
+   - Conclusion: key takeaways.
+3. Use **Chart.js via CDN**: https://cdn.jsdelivr.net/npm/chart.js for charts.
+4. Use **intersection observer** for scroll-triggered animations (fade-ins, slide-ups).
+5. Modern, responsive design, suitable for desktop and mobile.
+6. All HTML tags, IDs, and JavaScript variables must be correct and fully match.
+7. Include **meta tags for SEO and social sharing**.
+8. The page should run directly in a browser **without errors**.
+9. **Return ONLY the full HTML code**, no markdown, no explanations, no comments.
 
-Technical requirements:
-- Use modern HTML5, CSS3, and vanilla JavaScript
-- Include Chart.js from CDN for charts: https://cdn.jsdelivr.net/npm/chart.js
-- Use intersection observer for scroll-triggered animations
-- Make it production-ready with proper error handling
-- Include meta tags for SEO and social sharing
-
-The story should be engaging, insightful, and reveal meaningful patterns in the data. Make it visually stunning and professionally designed.
-
-Return ONLY the complete HTML code, no explanations or markdown formatting.`;
+The page must provide a visually engaging scrollytelling experience that reveals insights from the data as the user scrolls.`;
 };
+
