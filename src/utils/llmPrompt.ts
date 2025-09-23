@@ -8,19 +8,32 @@ ${csvContent}
 Requirements:
 
 1. Complete, self-contained HTML5 file with **inline CSS and JavaScript only**.
-2. Sections:
-   - Hero: page title and brief overview.
-   - Key Insights (3–5 major findings), each with charts or visuals.
-   - Data Exploration: filterable and sortable table of the CSV data.
-   - Conclusion: key takeaways.
-3. Use **Chart.js via CDN**: https://cdn.jsdelivr.net/npm/chart.js for charts.
-4. Use **intersection observer** for scroll-triggered animations (fade-ins, slide-ups).
-5. Modern, responsive design, suitable for desktop and mobile.
-6. All HTML tags, IDs, and JavaScript variables must be correct and fully match.
-7. Include **meta tags for SEO and social sharing**.
-8. The page should run directly in a browser **without errors**.
-9. **Return ONLY the full HTML code**, no markdown, no explanations, no comments.
+2. Use **D3.js v7** via CDN: https://d3js.org/d3.v7.min.js
+3. Use **Scrollama** via CDN: https://unpkg.com/scrollama
+4. **Two-column responsive layout**:
+   - LEFT: Scrollable steps container with multiple step panels
+   - RIGHT: Sticky chart container (100vh height, position: sticky)
+5. **Multiple charts in sequence**:
+   - The scrollytelling section should be divided into multiple chart blocks (e.g., bar chart, line chart, heatmap, etc.).
+   - Each block has its own 3–5 scroll steps.
+   - For each block, initialize ONE SVG inside the sticky chart container that mutates across its steps.
+   - When moving to the next block, replace the chart with a new visualization type.
+6. **Scrollama integration**:
+   - Initialize scrollama to track step enter/exit events
+   - Each step should trigger smooth D3 transitions, highlights, filtering, or chart re-layouts
+   - Transitions must be smooth and stateful within each chart type
+7. Sections structure:
+   - Hero: page title and overview
+   - Scrollytelling: multiple chart blocks with left steps + right sticky chart
+   - Data Exploration: filterable and sortable table of CSV data
+   - Conclusion: key takeaways
+8. **Responsive design** that works on desktop and mobile
+9. Include **meta tags for SEO and social sharing**
+10. The page must run directly in a browser **without console errors**
+11. **Return ONLY the complete HTML code** - no markdown, no explanations, no comments outside the HTML
 
-The page must provide a visually engaging scrollytelling experience that reveals insights from the data as the user scrolls.`;
+The scrollytelling section must clearly show:  
+- Different chart types in sequence (e.g., bar chart block, then line chart block, then another chart type).  
+- Each chart block has its own scroll steps that reveal insights before moving to the next chart.`;
 };
 
