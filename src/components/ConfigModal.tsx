@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Settings, Check, AlertCircle, Zap } from 'lucide-react';
-import { isConfigured, getAvailableModels, getCommonBaseUrls } from '../utils/llmProvider';
+import { isConfigured, getAvailableModels, getCommonBaseUrls, saveConfig, loadConfig } from '../utils/llmProvider';
 
 interface ConfigModalProps {
   isOpen: boolean;
@@ -29,18 +29,15 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setError('');
-      if (currentConfig) {
-        setApiKey(currentConfig.apiKey || '');
-        setSelectedModel(currentConfig.model || availableModels[0].id);
-        setBaseUrl(currentConfig.baseUrl || commonBaseUrls[0].url);
-        setCustomBaseUrl('');
-      } else {
-        setSelectedModel(availableModels[0].id);
-        setBaseUrl(commonBaseUrls[0].url);
-        setCustomBaseUrl('');
-      }
+      
+      // Load saved configuration from localStorage
+      const savedConfig = loadConfig();
+      setApiKey(savedConfig.apiKey || '');
+      setSelectedModel(savedConfig.model || availableModels[0].id);
+      setBaseUrl(savedConfig.baseUrl || commonBaseUrls[0].url);
+      setCustomBaseUrl('');
     }
-  }, [isOpen, currentConfig]);
+  }, [isOpen]);
 
   const handleSave = async () => {
     if (!apiKey.trim()) {
@@ -68,6 +65,9 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
         apiKey: apiKey.trim(),
         model: selectedModel
       };
+
+      // Save configuration to localStorage
+      saveConfig(config);
 
       // Test the configuration with a simple request
       const testResponse = await fetch(`${finalBaseUrl}/models`, {
@@ -139,78 +139,10 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
           )}
 
           <div className="space-y-6">
-            {/* API Key Input */}
-            <div>
-              <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700 mb-2">
-                OpenRouter API Key
-              </label>
-              <input
-                id="apiKey"
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="sk-or-v1-..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                disabled={isLoading}
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Get your API key from{' '}
-                <a 
-                  href="https://openrouter.ai/keys" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-700 underline"
-                >
-                  openrouter.ai/keys
-                </a>
-              </p>
-            </div>
-
-            {/* Model Selection */}
+            {/* Base URL Selection - MOVED TO FIRST */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Choose AI Model
-              </label>
-              <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto">
-                {availableModels.map((model) => (
-                  <label
-                    key={model.id}
-                    className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
-                      selectedModel === model.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="model"
-                      value={model.id}
-                      checked={selectedModel === model.id}
-                      onChange={(e) => setSelectedModel(e.target.value)}
-                      className="sr-only"
-                    />
-                    <div className={`w-4 h-4 rounded-full border-2 mr-3 ${
-                      selectedModel === model.id
-                        ? 'border-blue-500 bg-blue-500'
-                        : 'border-gray-300'
-                    }`}>
-                      {selectedModel === model.id && (
-                        <div className="w-2 h-2 bg-white rounded-full mx-auto mt-0.5"></div>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900">{model.name}</div>
-                      <div className="text-sm text-gray-500">{model.provider} • {model.id}</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Base URL Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                API Provider
+                1. Choose API Provider
               </label>
               <div className="space-y-2">
                 {commonBaseUrls.map((provider) => (
@@ -292,6 +224,74 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
               </div>
             </div>
 
+            {/* Model Selection - MOVED TO SECOND */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                2. Choose AI Model
+              </label>
+              <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto">
+                {availableModels.map((model) => (
+                  <label
+                    key={model.id}
+                    className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                      selectedModel === model.id
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="model"
+                      value={model.id}
+                      checked={selectedModel === model.id}
+                      onChange={(e) => setSelectedModel(e.target.value)}
+                      className="sr-only"
+                    />
+                    <div className={`w-4 h-4 rounded-full border-2 mr-3 ${
+                      selectedModel === model.id
+                        ? 'border-blue-500 bg-blue-500'
+                        : 'border-gray-300'
+                    }`}>
+                      {selectedModel === model.id && (
+                        <div className="w-2 h-2 bg-white rounded-full mx-auto mt-0.5"></div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900">{model.name}</div>
+                      <div className="text-sm text-gray-500">{model.provider} • {model.id}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* API Key Input - MOVED TO THIRD */}
+            <div>
+              <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700 mb-2">
+                3. Enter API Key
+              </label>
+              <input
+                id="apiKey"
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="sk-or-v1-..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                disabled={isLoading}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Get your API key from{' '}
+                <a 
+                  href="https://openrouter.ai/keys" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-700 underline"
+                >
+                  openrouter.ai/keys
+                </a>
+              </p>
+            </div>
+
             {/* Info Box */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
@@ -300,7 +300,7 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
                   <h3 className="font-medium text-blue-800 mb-1">About OpenRouter</h3>
                   <p className="text-blue-700 text-sm">
                     OpenRouter provides unified access to multiple AI models including GPT, Claude, Gemini, and more. 
-                    Your API key is stored locally and never shared with our servers.
+                    Your configuration is saved locally in your browser for convenience.
                   </p>
                 </div>
               </div>

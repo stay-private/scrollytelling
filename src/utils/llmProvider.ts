@@ -1,6 +1,7 @@
 import { openaiConfig } from 'tailwind-llm-provider';
 
 const DEFAULT_BASE_URL = "https://openrouter.ai/api/v1";
+const DEFAULT_MODEL = "google/gemini-2.5-flash";
 
 const COMMON_BASE_URLS = [
   { url: "https://openrouter.ai/api/v1", name: "OpenRouter" },
@@ -17,50 +18,54 @@ const AVAILABLE_MODELS = [
   { id: "anthropic/claude-opus-4.1", name: "Claude 4.1 Opus", provider: "Anthropic" }
 ];
 
+// LocalStorage keys
+const STORAGE_KEYS = {
+  API_KEY: 'llm_api_key',
+  BASE_URL: 'llm_base_url',
+  MODEL: 'llm_model'
+};
+
+// Save configuration to localStorage
+export function saveConfig(config: any) {
+  if (config.apiKey) {
+    localStorage.setItem(STORAGE_KEYS.API_KEY, config.apiKey);
+  }
+  if (config.baseUrl) {
+    localStorage.setItem(STORAGE_KEYS.BASE_URL, config.baseUrl);
+  }
+  if (config.model) {
+    localStorage.setItem(STORAGE_KEYS.MODEL, config.model);
+  }
+}
+
+// Load configuration from localStorage
+export function loadConfig() {
+  return {
+    apiKey: localStorage.getItem(STORAGE_KEYS.API_KEY) || '',
+    baseUrl: localStorage.getItem(STORAGE_KEYS.BASE_URL) || DEFAULT_BASE_URL,
+    model: localStorage.getItem(STORAGE_KEYS.MODEL) || DEFAULT_MODEL
+  };
+}
+
 export async function getLLMConfig() {
   try {
-    const config = await openaiConfig({
-      show: false,
-      defaultBaseUrls: [DEFAULT_BASE_URL],
-      title: "OpenRouter Configuration",
-      help: "Configure your OpenRouter API key to access multiple AI models."
-    });
+    // Load from localStorage instead of using tailwind-llm-provider
+    const savedConfig = loadConfig();
     
-    // Add default model if not set
-    if (config && !config.model) {
-      config.model = AVAILABLE_MODELS[0].id;
+    // Only return config if we have an API key
+    if (savedConfig.apiKey) {
+      return savedConfig;
     }
     
-    // Add default base URL if not set
-    if (config && !config.baseUrl) {
-      config.baseUrl = DEFAULT_BASE_URL;
-    }
-    
-    return config;
+    return null;
   } catch (error) {
     return null;
   }
 }
 
 export async function showLLMConfigModal() {
-  const config = await openaiConfig({
-    show: true,
-    defaultBaseUrls: [DEFAULT_BASE_URL],
-    title: "Configure OpenRouter",
-    help: "Enter your OpenRouter API key to access multiple AI models including GPT, Claude, Gemini, and more."
-  });
-  
-  // Add default model if not set
-  if (config && !config.model) {
-    config.model = AVAILABLE_MODELS[0].id;
-  }
-  
-  // Add default base URL if not set
-  if (config && !config.baseUrl) {
-    config.baseUrl = DEFAULT_BASE_URL;
-  }
-  
-  return config;
+  // This function is no longer used since we're using our custom modal
+  return null;
 }
 
 export async function* generateResponseStream(config: any, prompt: string, options: any = {}) {
