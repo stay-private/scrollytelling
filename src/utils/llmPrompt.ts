@@ -1,63 +1,249 @@
 export const createScrollytellingPrompt = (dataProfile: any, fileName: string, storyStyle?: string, userPrompt?: string): string => {
-  const systemPrompt = `You are an expert web developer and data storyteller specializing in creating engaging scrollytelling experiences. You have deep expertise in:
+  const systemPrompt = `You are an expert scrollytelling developer with 10+ years of experience in D3.js, Scrollama, and data visualization. You MUST create working, tested code that renders properly on first load.
 
-- D3.js v7 for data visualization
-- Scrollama for scroll-driven animations
-- Responsive web design and UX best practices
-- Data analysis and narrative construction
-- Modern HTML5, CSS3, and JavaScript
+CRITICAL SUCCESS CRITERIA:
+- ALL charts MUST render visibly on page load
+- NO console errors allowed
+- ALL D3 transitions MUST work smoothly
+- Scrollama MUST trigger all step changes
+- Data MUST be properly processed and displayed
 
-Your task is to create compelling, interactive data stories that reveal insights through smooth scroll-driven animations and visualizations.`;
+You have deep expertise in D3.js v7, Scrollama, responsive design, and performance optimization.`;
 
-  const mainPromptContent = `Generate a **fully working HTML page** for scrollytelling based on the analyzed CSV data profile below.
+  const validationSection = `**MANDATORY VALIDATION CHECKLIST - YOU MUST VERIFY EACH ITEM:**
 
-Requirements:
+□ Data parsing: CSV data correctly converted to JavaScript arrays
+□ D3 scales: All scales (x, y, color, size) properly defined with correct domains
+□ SVG setup: Width, height, margins calculated correctly for all chart types
+□ Initial render: First chart visible immediately on page load
+□ Scrollama init: Event listeners properly attached to all steps
+□ Transitions: Each step change triggers smooth D3 animations
+□ Responsiveness: Charts adapt to different screen sizes
+□ Error handling: Graceful handling of missing/invalid data points
+□ Performance: No memory leaks, efficient DOM updates
+□ Browser compatibility: Works in Chrome, Firefox, Safari, Edge`;
 
-1. **Complete, self-contained HTML5 file** with inline CSS and JavaScript only
-2. **Libraries via CDN**:
-   - D3.js v7: https://d3js.org/d3.v7.min.js
-   - Scrollama: https://unpkg.com/scrollama
-3. **Layout Structure**:
-   - Hero section with title and overview
-   - **Scrollytelling section with TWO-COLUMN layout**:
-     - LEFT: Scrollable steps container (each step = 100vh height exactly)
-     - RIGHT: Sticky chart container (100vh height, position: sticky)
-   - Conclusion with key takeaways
-4. **Scrollytelling Rules**:
-   - **EXACTLY 1 story point per 100vh** - each step must be exactly 100vh in height
-   - Create 8-12 total steps across multiple chart types
-   - Group steps into 2-3 chart blocks (e.g., 4 steps for bar chart, 4 steps for line chart, 4 steps for scatter plot)
-   - Each chart block uses ONE SVG that mutates smoothly across its steps
-   - When transitioning between chart blocks, replace with new visualization type
-5. **Scrollama Integration**:
-   - Initialize scrollama to track step enter/exit events
-   - Smooth D3 transitions for each step (duration: 750ms)
-   - Progressive data revelation and highlighting
-6. **Responsive Design**:
-   - Works on desktop and mobile
-   - Proper breakpoints and mobile-first approach
-7. **Performance**:
-   - Efficient D3 data binding and updates
-   - Smooth 60fps animations
-   - No console errors
-8. **SEO & Accessibility**:
-   - Proper meta tags for social sharing
-   - Alt text for visualizations
-   - Semantic HTML structure
+  const strictRequirements = `**STRICT TECHNICAL REQUIREMENTS - NO EXCEPTIONS:**
 
-${storyStyle ? `**Story Style**: ${storyStyle}` : ''}
-${userPrompt ? `**Additional Instructions**: ${userPrompt}` : ''}
+1. **HTML STRUCTURE** (EXACT format required):
+   \`\`\`html
+   <!DOCTYPE html>
+   <html lang="en">
+   <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>[Data-driven title]</title>
+     <script src="https://d3js.org/d3.v7.min.js"></script>
+     <script src="https://unpkg.com/scrollama"></script>
+     <style>/* CSS here */</style>
+   </head>
+   <body>/* Content here */</body>
+   </html>
+   \`\`\`
 
-**Return ONLY the complete HTML code** - no markdown, no explanations, no comments outside the HTML.`;
+2. **CSS REQUIREMENTS** (Copy this EXACT structure):
+   \`\`\`css
+   * { margin: 0; padding: 0; box-sizing: border-box; }
+   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+   
+   .scrollytelling-container {
+     display: flex;
+     max-width: 1400px;
+     margin: 0 auto;
+   }
+   
+   .steps-container {
+     flex: 1;
+     padding-right: 2rem;
+   }
+   
+   .step {
+     height: 100vh;
+     display: flex;
+     align-items: center;
+     padding: 2rem;
+     border-bottom: 1px solid #eee;
+   }
+   
+   .chart-container {
+     flex: 1;
+     position: sticky;
+     top: 0;
+     height: 100vh;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     background: #fff;
+   }
+   
+   #chart-svg {
+     max-width: 100%;
+     max-height: 90vh;
+   }
+   \`\`\`
 
-  const dataSection = `**CSV Data Profile for "${fileName}":**
+3. **JAVASCRIPT REQUIREMENTS** (MANDATORY structure):
+   \`\`\`javascript
+   // STEP 1: Parse and validate data
+   const rawData = [/* CSV data as JSON */];
+   const data = rawData.filter(d => /* validation logic */);
+   
+   // STEP 2: Set up dimensions and scales
+   const margin = {top: 40, right: 40, bottom: 60, left: 60};
+   const width = 800 - margin.left - margin.right;
+   const height = 500 - margin.top - margin.bottom;
+   
+   // STEP 3: Create SVG
+   const svg = d3.select("#chart-svg")
+     .attr("width", width + margin.left + margin.right)
+     .attr("height", height + margin.top + margin.bottom);
+   
+   const g = svg.append("g")
+     .attr("transform", \`translate(\${margin.left},\${margin.top})\`);
+   
+   // STEP 4: Initialize first chart
+   function initChart() {
+     // MUST render first visualization here
+   }
+   
+   // STEP 5: Step update functions
+   const stepFunctions = {
+     0: () => { /* First step animation */ },
+     1: () => { /* Second step animation */ },
+     // ... continue for all steps
+   };
+   
+   // STEP 6: Scrollama setup
+   const scroller = scrollama();
+   
+   scroller
+     .setup({
+       step: '.step',
+       offset: 0.5,
+       debug: false
+     })
+     .onStepEnter(handleStepEnter)
+     .onStepExit(handleStepExit);
+   
+   function handleStepEnter(response) {
+     const stepIndex = response.index;
+     if (stepFunctions[stepIndex]) {
+       stepFunctions[stepIndex]();
+     }
+   }
+   
+   // STEP 7: Initialize on load
+   window.addEventListener('load', () => {
+     initChart();
+   });
+   \`\`\`
+
+4. **DATA PROCESSING RULES**:
+   - Convert all numeric strings to numbers using +value or parseFloat()
+   - Handle null/undefined values with || 0 or filtering
+   - Validate date formats and convert properly
+   - Create backup values for any missing data points
+
+5. **CHART REQUIREMENTS** (MUST include ALL):
+   - **EXACTLY 10 steps total** across 3 chart types
+   - **Steps 0-3**: Bar/Column chart with progressive data reveal
+   - **Steps 4-6**: Line/Area chart with time-based animation  
+   - **Steps 7-9**: Scatter plot or other advanced visualization
+   - Each step MUST have visible changes (color, data, labels, etc.)
+   - Smooth transitions between ALL steps (duration: 500-1000ms)
+
+6. **ERROR PREVENTION**:
+   - Wrap all D3 operations in try-catch blocks
+   - Add console.log statements for debugging
+   - Validate data before creating scales
+   - Check if elements exist before manipulating them`;
+
+  const dataAnalysisSection = `**DATA ANALYSIS INSTRUCTIONS**:
+
+Based on the CSV profile below, you MUST:
+1. **Identify the 3 most interesting data dimensions**
+2. **Create meaningful data groupings/categories**  
+3. **Calculate summary statistics** (mean, max, min, totals)
+4. **Design 3 complementary chart types** that reveal different insights
+5. **Write compelling narrative text** for each step that explains the data story
+
+**NARRATIVE REQUIREMENTS**:
+- Each step needs 2-3 sentences explaining what the viewer is seeing
+- Use specific data points and numbers in the text
+- Progressive revelation: start broad, get more specific
+- Include context and implications of the data patterns
+- End with actionable insights or conclusions`;
+
+  const outputInstructions = `**OUTPUT INSTRUCTIONS - FOLLOW EXACTLY**:
+
+1. **FIRST**: Analyze the data profile and plan your 10 steps
+2. **SECOND**: Write the complete HTML file following the exact structure above
+3. **THIRD**: Test mentally that each requirement is met
+4. **RETURN ONLY**: The complete HTML code (no markdown, no explanations)
+
+**QUALITY ASSURANCE - Before returning code, verify**:
+✅ Data is properly parsed and validated
+✅ All 10 steps have unique, visible changes  
+✅ First chart renders immediately on load
+✅ Scrollama is properly initialized
+✅ All D3 scales have correct domains/ranges
+✅ Transitions work smoothly between steps
+✅ No undefined variables or functions
+✅ Responsive design works on mobile
+✅ Clean, semantic HTML structure
+✅ Performance optimized (no redundant operations)
+
+**IF ANY REQUIREMENT IS NOT MET, REWRITE THE ENTIRE CODE UNTIL PERFECT**`;
+
+  const mainPromptContent = `${strictRequirements}
+
+${validationSection}
+
+${dataAnalysisSection}
+
+${outputInstructions}
+
+${storyStyle ? `**STORY STYLE REQUIREMENT**: ${storyStyle} - Apply this tone and approach throughout the narrative.` : ''}
+
+${userPrompt ? `**ADDITIONAL USER REQUIREMENTS**: ${userPrompt} - Incorporate these specific requests while maintaining all technical requirements above.` : ''}`;
+
+  const dataSection = `**CSV DATA PROFILE TO ANALYZE:**
 
 \`\`\`json
 ${JSON.stringify(dataProfile, null, 2)}
-\`\`\``;
+\`\`\`
+
+**FILE NAME**: ${fileName}
+
+Remember: You MUST create a working HTML file that renders perfectly on first load. No excuses, no partial implementations. Every chart must work, every transition must be smooth, every step must trigger properly.`;
 
   return `${systemPrompt}\n\n${mainPromptContent}\n\n${dataSection}`;
 };
+
+// Optional: Helper function to add additional validation
+export const addValidationPrompt = (basePrompt: string): string => {
+  const validationAddendum = `
+
+**FINAL VALIDATION REMINDER**:
+Before submitting your HTML code, mentally execute this checklist:
+1. Does the page load without errors?
+2. Is the first chart visible immediately?
+3. Do all 10 scrollytelling steps work?
+4. Are D3 transitions smooth and error-free?
+5. Is the data properly processed and displayed?
+6. Does Scrollama trigger step changes correctly?
+7. Is the layout responsive and well-styled?
+8. Are all CDN libraries loading correctly?
+9. Is there proper error handling for edge cases?
+10. Would this impress a senior developer?
+
+If ANY answer is "no" or "maybe", rewrite the code until ALL answers are "yes".`;
+
+  return basePrompt + validationAddendum;
+};
+
+// Usage example with validation:
+// const prompt = addValidationPrompt(createScrollytellingPrompt(dataProfile, fileName, storyStyle, userPrompt));
 export const createRefactorPrompt = (refactorInstructions: string, existingHtml: string, dataProfile: any, fileName: string): string => {
   const systemPrompt = `You are an expert web developer and data storyteller specializing in refactoring and improving scrollytelling experiences. You have deep expertise in:
 
