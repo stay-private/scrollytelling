@@ -1,5 +1,6 @@
 import React from 'react';
-import { Settings, Check } from 'lucide-react';
+import { Settings, Check, Zap } from 'lucide-react';
+import { getAvailableModels } from '../utils/llmProvider';
 
 interface ConfigPanelProps {
   config: any;
@@ -8,15 +9,12 @@ interface ConfigPanelProps {
 }
 
 export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, configured, onConfigureClick }) => {
+  const availableModels = getAvailableModels();
 
-  const getProviderName = () => {
-    if (!config?.baseUrl) return 'Unknown Provider';
-    
-    const url = config.baseUrl;
-    if (url.includes('openai.com')) return 'OpenAI';
-    if (url.includes('generativelanguage.googleapis.com')) return 'Google Gemini';
-    if (url.includes('aipipe.org')) return 'AI Pipe';
-    return 'Custom Provider';
+  const getCurrentModel = () => {
+    if (!config?.model) return 'No model selected';
+    const model = availableModels.find(m => m.id === config.model);
+    return model ? model.name : config.model;
   };
 
   return (
@@ -27,15 +25,15 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, configured, on
             {configured ? (
               <Check className="h-5 w-5 text-green-600" />
             ) : (
-              <Settings className="h-5 w-5 text-blue-600" />
+              <Zap className="h-5 w-5 text-blue-600" />
             )}
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-gray-800">LLM Configuration</h2>
+            <h2 className="text-xl font-semibold text-gray-800">OpenRouter Configuration</h2>
             <p className="text-sm text-gray-600">
               {configured 
-                ? `Connected to ${getProviderName()}`
-                : 'Configure your AI provider to generate stories'
+                ? `Using ${getCurrentModel()}`
+                : 'Configure OpenRouter to access multiple AI models'
               }
             </p>
           </div>
@@ -50,7 +48,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, configured, on
           onClick={onConfigureClick}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors flex items-center gap-2"
         >
-          <Settings className="h-4 w-4" />
+          <Zap className="h-4 w-4" />
           {configured ? 'Reconfigure' : 'Configure'}
         </button>
       </div>

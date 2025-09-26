@@ -4,6 +4,8 @@ import { ConfigPanel } from './components/ConfigPanel';
 import { FileUpload } from './components/FileUpload';
 import { GenerationPanel } from './components/GenerationPanel';
 import { ResultDisplay } from './components/ResultDisplay';
+import { StreamingDisplay } from './components/StreamingDisplay';
+import { ConfigModal } from './components/ConfigModal';
 import { useLLMGeneration } from './hooks/useLLMGeneration';
 import { getLLMConfig, showLLMConfigModal, isConfigured } from './utils/llmProvider';
 import { useEffect } from 'react';
@@ -13,8 +15,9 @@ function App() {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvContent, setCsvContent] = useState<string>('');
   const [configLoading, setConfigLoading] = useState(true);
+  const [showConfigModal, setShowConfigModal] = useState(false);
 
-  const { generateScrollytelling, isGenerating, generatedHtml, dataProfile, error, setError } = useLLMGeneration(config);
+  const { generateScrollytelling, isGenerating, generatedHtml, streamingContent, dataProfile, error, setError } = useLLMGeneration(config);
 
   const configured = isConfigured(config);
   const hasFile = csvFile !== null;
@@ -36,19 +39,12 @@ function App() {
   }, []);
 
   const handleConfigureClick = async () => {
-    try {
-      const newConfig = await showLLMConfigModal();
-      setConfig(newConfig);
-      setError('');
-    } catch (error) {
-      if (error.message !== 'cancelled') {
-        setError('Failed to configure LLM provider');
-      }
-    }
+    setShowConfigModal(true);
   };
 
   const handleConfigSave = (newConfig: any) => {
     setConfig(newConfig);
+    setShowConfigModal(false);
     setError('');
   };
 
@@ -58,10 +54,10 @@ function App() {
     setError('');
   };
 
-  const handleGenerate = async (userPrompt?: string) => {
+  const handleGenerate = async (userPrompt?: string, useStreaming?: boolean) => {
     if (!canGenerate || !csvFile || !csvContent) return;
     
-    await generateScrollytelling(csvContent, csvFile.name, undefined, userPrompt);
+    await generateScrollytelling(csvContent, csvFile.name, undefined, userPrompt, useStreaming);
   };
 
   const handleRefactor = async (refactorPrompt: string) => {
@@ -111,6 +107,14 @@ function App() {
           onConfigureClick={handleConfigureClick}
         />
 
+        {/* Configuration Modal */}
+        <ConfigModal
+          isOpen={showConfigModal}
+          onClose={() => setShowConfigModal(false)}
+          onConfigChange={handleConfigSave}
+          currentConfig={config}
+        />
+
         {/* File Upload */}
         <FileUpload
           onFileUpload={handleFileUpload}
@@ -128,8 +132,16 @@ function App() {
           />
         )}
 
+        {/* Streaming Display */}
+        {streamingContent && (
+          <StreamingDisplay
+            content={streamingContent}
+            isStreaming={isGenerating}
+          />
+        )}
+
         {/* Results */}
-        {generatedHtml && (
+        {generatedHtml && !streamingContent && (
           <ResultDisplay
             htmlContent={generatedHtml}
             isGenerating={isGenerating}
@@ -183,8 +195,6 @@ function App() {
           </div>
         )}
       </div>
-
-
     </div>
   );
 }

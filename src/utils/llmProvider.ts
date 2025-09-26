@@ -1,96 +1,145 @@
 import { openaiConfig } from 'tailwind-llm-provider';
 
-const baseUrls = [
-  { name: "OpenAI", url: "https://api.openai.com/v1" },
-  { name: "Google Gemini", url: "https://generativelanguage.googleapis.com/v1beta/openai" },
-  { name: "AI Pipe", url: "https://aipipe.org/openrouter/v1" },
-  { name: "Custom Provider", url: "" }
+const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+
+const AVAILABLE_MODELS = [
+  { id: "google/gemini-2.5-flash", name: "Gemini 2.5 Flash", provider: "Google" },
+  { id: "openai/gpt-5-codex", name: "GPT-5 Codex", provider: "OpenAI" },
+  { id: "openai/gpt-5-mini", name: "GPT-5 Mini", provider: "OpenAI" },
+  { id: "qwen/qwen-2.5-coder-32b-instruct", name: "Qwen 2.5 Coder", provider: "Alibaba" },
+  { id: "x-ai/grok-beta", name: "Grok Beta", provider: "xAI" },
+  { id: "anthropic/claude-3.5-sonnet", name: "Claude 3.5 Sonnet", provider: "Anthropic" }
 ];
 
 export async function getLLMConfig() {
   try {
-    return await openaiConfig({
+    const config = await openaiConfig({
       show: false,
-      // Don't use baseUrls for getLLMConfig to allow flexibility
-      defaultBaseUrls: [
-        "https://api.openai.com/v1",
-        "https://generativelanguage.googleapis.com/v1beta/openai", 
-        "https://aipipe.org/openrouter/v1"
-      ],
-      title: "AI Provider Configuration",
-      help: "Choose your preferred AI provider and enter your API key. Your credentials are stored locally and never shared."
+      defaultBaseUrls: [OPENROUTER_BASE_URL],
+      title: "OpenRouter Configuration",
+      help: "Configure your OpenRouter API key to access multiple AI models."
     });
+    
+    // Add default model if not set
+    if (config && !config.model) {
+      config.model = AVAILABLE_MODELS[0].id;
+    }
+    
+    return config;
   } catch (error) {
     return null;
   }
 }
 
 export async function showLLMConfigModal() {
-  return await openaiConfig({
+  const config = await openaiConfig({
     show: true,
-    // Use input field with datalist instead of dropdown for flexibility
-    defaultBaseUrls: [
-      "https://api.openai.com/v1",
-      "https://generativelanguage.googleapis.com/v1beta/openai", 
-      "https://aipipe.org/openrouter/v1",
-      "https://api.together.xyz/v1",
-      "https://api.groq.com/openai/v1"
-    ],
-    title: "Choose Your AI Provider",
-    help: "Configure your AI provider to generate scrollytelling stories. Your credentials are stored securely in your browser."
+    defaultBaseUrls: [OPENROUTER_BASE_URL],
+    title: "Configure OpenRouter",
+    help: "Enter your OpenRouter API key to access multiple AI models including GPT, Claude, Gemini, and more."
   });
+  
+  // Add default model if not set
+  if (config && !config.model) {
+    config.model = AVAILABLE_MODELS[0].id;
+  }
+  
+  return config;
 }
 
-export async function generateResponse(config: any, prompt: string, options: any = {}) {
-  if (!config || !config.apiKey || !config.baseUrl) {
-    throw new Error('Invalid LLM configuration');
+export async function* generateResponseStream(config: any, prompt: string, options: any = {}) {
+  if (!config || !config.apiKey) {
+    throw new Error('OpenRouter API key is required');
   }
 
   const headers = {
     "Content-Type": "application/json",
     "Authorization": `Bearer ${config.apiKey}`,
+    "HTTP-Referer": window.location.origin,
+    "X-Title": "CSV Scrollytelling Generator"
   };
 
-  // Choose model based on provider
-  let model = "gpt-5-codex"; // Default fallback
-  
-  if (config.baseUrl) {
-    const url = config.baseUrl.toLowerCase();
-    if (url.includes('generativelanguage.googleapis.com')) {
-      // Google Gemini
-      model = "gemini-2.5-flash";
-    } else if (url.includes('openai.com')) {
-      // OpenAI
-      model = "gpt-5-codex";
-    } else if (url.includes('aipipe.org')) {
-      // AI Pipe - use a popular model
-      model = "gpt-5-codex";
-    } else {
-      // Custom provider - use configured model or fallback
-      model = config.models && config.models.length > 0 ? config.models[0] : "gpt-5-codex";
-    }
-  }
+  const model = config.model || AVAILABLE_MODELS[0].id;
 
-  const res = await fetch(`${config.baseUrl}/chat/completions`, {
+  const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
     method: "POST",
     headers,
     body: JSON.stringify({
       model,
       messages: [{ role: "user", content: prompt }],
       temperature: options.temperature ?? 0.7,
+      stream: true
     }),
   });
 
-  if (!res.ok) {
-    throw new Error(`API request failed: ${res.status} ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`OpenRouter API request failed: ${response.status} ${response.statusText}`);
   }
 
-  const completion = await res.json();
-  const text = completion?.choices?.[0]?.message?.content || "";
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new Error('Failed to get response stream');
+  }
 
-  return { text, raw: completion };
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      
+      if (done) break;
+      
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          
+          if (data === '[DONE]') {
+            return;
+          }
+          
+          try {
+            const parsed = JSON.parse(data);
+            const content = parsed.choices?.[0]?.delta?.content;
+            
+            if (content) {
+              yield content;
+            }
+          } catch (e) {
+            // Skip invalid JSON lines
+            continue;
+          }
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+export async function generateResponse(config: any, prompt: string, options: any = {}) {
+  let fullText = '';
+  
+  for await (const chunk of generateResponseStream(config, prompt, options)) {
+    fullText += chunk;
+  }
+  
+  return { text: fullText };
 }
 
 export function isConfigured(config: any) {
-  return config && config.apiKey && config.baseUrl;
+  return config && config.apiKey;
+}
+
+export function getAvailableModels() {
+  return AVAILABLE_MODELS;
+}
+
+export function getProviderConfig() {
+  // This function is used by ConfigModal to get current config
+  return null; // Will be handled by the modal component
 }
