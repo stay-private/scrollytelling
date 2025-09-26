@@ -5,7 +5,7 @@ const DEFAULT_BASE_URL = "https://openrouter.ai/api/v1";
 const COMMON_BASE_URLS = [
   { url: "https://openrouter.ai/api/v1", name: "OpenRouter" },
   { url: "https://aipipe.org/openrouter/v1", name: "AI Pipe" },
-  { url: "https://api.llmfoundry.ai/v1", name: "LLM Foundry" }
+  { url: "https://llmfoundry.straive.com/openrouter", name: "LLM Foundry" }
 ];
 
 const AVAILABLE_MODELS = [
