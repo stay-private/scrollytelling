@@ -14,7 +14,7 @@ const AVAILABLE_MODELS = [
   { id: "openai/gpt-5-mini", name: "GPT-5 Mini", provider: "OpenAI" },
   { id: "qwen/qwen3-Max", name: "Qwen 3 Max", provider: "Alibaba" },
   { id: "x-ai/grok-4-fast", name: "Grok 4", provider: "xAI" },
-  { id: "anthropic/claude-opus-4-1-20250805", name: "Claude 4.1 Opus", provider: "Anthropic" }
+  { id: "anthropic/claude-opus-4.1", name: "Claude 4.1 Opus", provider: "Anthropic" }
 ];
 
 export async function getLLMConfig() {
