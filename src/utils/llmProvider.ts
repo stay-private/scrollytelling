@@ -12,7 +12,7 @@ const AVAILABLE_MODELS = [
   { id: "google/gemini-2.5-flash", name: "Gemini 2.5 Flash", provider: "Google" },
   { id: "openai/gpt-5-codex", name: "GPT-5 Codex", provider: "OpenAI" },
   { id: "openai/gpt-5-mini", name: "GPT-5 Mini", provider: "OpenAI" },
-  { id: "qwen/qwen-2.5-coder-32b-instruct", name: "Qwen 2.5 Coder", provider: "Alibaba" },
+  { id: "qwen/qwen3-Max", name: "Qwen 3 Max", provider: "Alibaba" },
   { id: "x-ai/grok-4-fast", name: "Grok 4", provider: "xAI" },
   { id: "anthropic/claude-opus-4-1-20250805", name: "Claude 4.1 Opus", provider: "Anthropic" }
 ];
