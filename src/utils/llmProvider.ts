@@ -1,35 +1,77 @@
-import { openaiConfig } from "https://unpkg.com/tailwind-llm-provider@1/dist/index.min.js";
+import { openaiConfig } from 'tailwind-llm-provider';
 
-let providerConfig: any = null;
+const baseUrls = [
+  { name: "OpenAI", url: "https://api.openai.com/v1" },
+  { name: "Google Gemini", url: "https://generativelanguage.googleapis.com/v1beta/openai" },
+  { name: "AI Pipe", url: "https://aipipe.org/openrouter/v1" },
+  { name: "Custom Provider", url: "" }
+];
 
-export function setProviderConfig(config: any) {
-  providerConfig = config;
+export async function getLLMConfig() {
+  try {
+    return await openaiConfig({
+      show: false,
+      // Don't use baseUrls for getLLMConfig to allow flexibility
+      defaultBaseUrls: [
+        "https://api.openai.com/v1",
+        "https://generativelanguage.googleapis.com/v1beta/openai", 
+        "https://aipipe.org/openrouter/v1"
+      ],
+      title: "AI Provider Configuration",
+      help: "Choose your preferred AI provider and enter your API key. Your credentials are stored locally and never shared."
+    });
+  } catch (error) {
+    return null;
+  }
 }
 
-function pickModel(provider: any) {
-  if (!provider) return "gpt-4o-mini";
-
-  const url = provider.baseUrl || "";
-  if (url.includes("openai.com")) return "gpt-5";
-  if (url.includes("generativelanguage.googleapis.com")) return "gemini-2.5-flash";
-  if (url.includes("aipipe.org")) return "gpt-5";
-
-  return "gpt-4o-mini"; // fallback
+export async function showLLMConfigModal() {
+  return await openaiConfig({
+    show: true,
+    // Use input field with datalist instead of dropdown for flexibility
+    defaultBaseUrls: [
+      "https://api.openai.com/v1",
+      "https://generativelanguage.googleapis.com/v1beta/openai", 
+      "https://aipipe.org/openrouter/v1",
+      "https://api.together.xyz/v1",
+      "https://api.groq.com/openai/v1"
+    ],
+    title: "Choose Your AI Provider",
+    help: "Configure your AI provider to generate scrollytelling stories. Your credentials are stored securely in your browser."
+  });
 }
 
-export async function generateResponse(prompt: string, options: any = {}) {
-  if (!providerConfig) {
-    await pickProvider();
+export async function generateResponse(config: any, prompt: string, options: any = {}) {
+  if (!config || !config.apiKey || !config.baseUrl) {
+    throw new Error('Invalid LLM configuration');
   }
 
-  const headers: any = {
+  const headers = {
     "Content-Type": "application/json",
-    ...(providerConfig.apiKey && { Authorization: `Bearer ${providerConfig.apiKey}` }),
+    "Authorization": `Bearer ${config.apiKey}`,
   };
 
-  const model = pickModel(providerConfig);
+  // Choose model based on provider
+  let model = "gpt-5-codex"; // Default fallback
+  
+  if (config.baseUrl) {
+    const url = config.baseUrl.toLowerCase();
+    if (url.includes('generativelanguage.googleapis.com')) {
+      // Google Gemini
+      model = "gemini-2.5-flash";
+    } else if (url.includes('openai.com')) {
+      // OpenAI
+      model = "gpt-5-codex";
+    } else if (url.includes('aipipe.org')) {
+      // AI Pipe - use a popular model
+      model = "gpt-5-codex";
+    } else {
+      // Custom provider - use configured model or fallback
+      model = config.models && config.models.length > 0 ? config.models[0] : "gpt-5-codex";
+    }
+  }
 
-  const res = await fetch(providerConfig.baseUrl + "/chat/completions", {
+  const res = await fetch(`${config.baseUrl}/chat/completions`, {
     method: "POST",
     headers,
     body: JSON.stringify({
@@ -49,10 +91,6 @@ export async function generateResponse(prompt: string, options: any = {}) {
   return { text, raw: completion };
 }
 
-export function getProviderConfig() {
-  return providerConfig;
-}
-
-export function isConfigured() {
-  return providerConfig && providerConfig.baseUrl && providerConfig.apiKey;
+export function isConfigured(config: any) {
+  return config && config.apiKey && config.baseUrl;
 }

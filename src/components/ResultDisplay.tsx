@@ -9,7 +9,6 @@ interface ResultDisplayProps {
 
 export const ResultDisplay: React.FC<ResultDisplayProps> = ({
   htmlContent,
-  onRegenerate,
   isGenerating
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -45,15 +44,6 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({
           </div>
           
           <div className="flex gap-2">
-            <button
-              onClick={onRegenerate}
-              disabled={isGenerating}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <RefreshCw className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
-              Regenerate
-            </button>
-            
             <button
               onClick={openInNewTab}
               className="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-medium transition-colors flex items-center gap-2"

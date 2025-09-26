@@ -1,27 +1,53 @@
 import React, { useState } from 'react';
 import { AlertCircle, FileText } from 'lucide-react';
 import { ConfigPanel } from './components/ConfigPanel';
-import { ConfigModal } from './components/ConfigModal';
 import { FileUpload } from './components/FileUpload';
 import { GenerationPanel } from './components/GenerationPanel';
 import { ResultDisplay } from './components/ResultDisplay';
 import { useLLMGeneration } from './hooks/useLLMGeneration';
-import { isConfigured, setProviderConfig } from './utils/llmProvider';
+import { getLLMConfig, showLLMConfigModal, isConfigured } from './utils/llmProvider';
+import { useEffect } from 'react';
 
 function App() {
   const [config, setConfig] = useState<any>(null);
-  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvContent, setCsvContent] = useState<string>('');
+  const [configLoading, setConfigLoading] = useState(true);
 
-  const { generateScrollytelling, isGenerating, generatedHtml, error, setError } = useLLMGeneration(config);
+  const { generateScrollytelling, isGenerating, generatedHtml, dataProfile, error, setError } = useLLMGeneration(config);
 
-  const configured = isConfigured();
+  const configured = isConfigured(config);
   const hasFile = csvFile !== null;
   const canGenerate = configured && hasFile && !isGenerating;
 
-  const handleConfigChange = (newConfig: any) => {
-    setProviderConfig(newConfig);
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const savedConfig = await getLLMConfig();
+        setConfig(savedConfig);
+      } catch (error) {
+        console.error('Failed to load LLM config:', error);
+      } finally {
+        setConfigLoading(false);
+      }
+    };
+    
+    loadConfig();
+  }, []);
+
+  const handleConfigureClick = async () => {
+    try {
+      const newConfig = await showLLMConfigModal();
+      setConfig(newConfig);
+      setError('');
+    } catch (error) {
+      if (error.message !== 'cancelled') {
+        setError('Failed to configure LLM provider');
+      }
+    }
+  };
+
+  const handleConfigSave = (newConfig: any) => {
     setConfig(newConfig);
     setError('');
   };
@@ -32,16 +58,16 @@ function App() {
     setError('');
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (userPrompt?: string) => {
     if (!canGenerate || !csvFile || !csvContent) return;
     
-    await generateScrollytelling(csvContent, csvFile.name);
+    await generateScrollytelling(csvContent, csvFile.name, undefined, userPrompt);
   };
 
-  const handleRegenerate = () => {
-    if (canGenerate) {
-      handleGenerate();
-    }
+  const handleRefactor = async (refactorPrompt: string) => {
+    if (!canGenerate || !csvFile || !csvContent) return;
+    
+    await generateScrollytelling(csvContent, csvFile.name, undefined, refactorPrompt);
   };
 
   return (
@@ -80,13 +106,15 @@ function App() {
 
         {/* Configuration Panel */}
         <ConfigPanel
-          onOpenModal={() => setIsConfigModalOpen(true)}
+          config={config}
+          configured={configured}
+          onConfigureClick={handleConfigureClick}
         />
 
         {/* File Upload */}
         <FileUpload
           onFileUpload={handleFileUpload}
-          disabled={!configured || isGenerating}
+          disabled={!configured || isGenerating || configLoading}
         />
 
         {/* Generation Panel */}
@@ -94,7 +122,9 @@ function App() {
           <GenerationPanel
             isGenerating={isGenerating}
             onGenerate={handleGenerate}
+            onRefactor={handleRefactor}
             disabled={!canGenerate}
+            hasGenerated={!!generatedHtml}
           />
         )}
 
@@ -102,13 +132,12 @@ function App() {
         {generatedHtml && (
           <ResultDisplay
             htmlContent={generatedHtml}
-            onRegenerate={handleRegenerate}
             isGenerating={isGenerating}
           />
         )}
 
         {/* Instructions */}
-        {!hasFile && configured && (
+        {!hasFile && configured && !configLoading && (
           <div className="bg-white rounded-xl shadow-lg p-8 text-center">
             <div className="max-w-2xl mx-auto">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Ready to Get Started!</h2>
@@ -143,14 +172,18 @@ function App() {
             </div>
           </div>
         )}
+
+        {/* Loading State */}
+        {configLoading && (
+          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+            <div className="max-w-2xl mx-auto">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Loading Configuration...</h2>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Configuration Modal */}
-      <ConfigModal
-        isOpen={isConfigModalOpen}
-        onClose={() => setIsConfigModalOpen(false)}
-        onConfigChange={handleConfigChange}
-      />
 
     </div>
   );

@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { createScrollytellingPrompt } from '../utils/llmPrompt';
+import { createScrollytellingPrompt, createRefactorPrompt } from '../utils/llmPrompt';
 import { generateResponse, isConfigured } from '../utils/llmProvider';
+import { createDataProfile } from '../utils/dataProfile';
 
 export const useLLMGeneration = (config: any) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedHtml, setGeneratedHtml] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [dataProfile, setDataProfile] = useState<any>(null);
 
   const extractHtmlFromResponse = (responseText: string): string => {
     // Remove markdown code fences if present
@@ -40,8 +42,8 @@ export const useLLMGeneration = (config: any) => {
     return htmlContent;
   };
 
-  const generateScrollytelling = async (csvContent: string, fileName: string) => {
-    if (!isConfigured()) {
+  const generateScrollytelling = async (csvContent: string, fileName: string, storyStyle?: string, promptInput?: string) => {
+    if (!isConfigured(config)) {
       setError('Please configure your LLM API first');
       return;
     }
@@ -50,11 +52,28 @@ export const useLLMGeneration = (config: any) => {
     setError('');
 
     try {
-      const prompt = createScrollytellingPrompt(csvContent, fileName);
+      // Create data profile instead of sending full CSV
+      const profile = createDataProfile(csvContent);
+      setDataProfile(profile);
       
-      const result = await generateResponse(prompt, {
-        temperature: 0.7,
-      });
+      console.log('Data Profile:', profile);
+      
+      let result;
+      
+      if (promptInput && generatedHtml) {
+        // For refactoring, include the existing HTML as context
+        const refactorPromptWithContext = createRefactorPrompt(promptInput, generatedHtml, profile, fileName);
+        result = await generateResponse(config, refactorPromptWithContext, {
+          temperature: 0.7,
+        });
+      } else {
+        // For initial generation, use the optional user prompt
+        const prompt = createScrollytellingPrompt(profile, fileName, storyStyle, promptInput);
+        console.log('Generated Prompt Length:', prompt.length);
+        result = await generateResponse(config, prompt, {
+          temperature: 0.7,
+        });
+      }
 
       const htmlContent = extractHtmlFromResponse(result.text);
       
@@ -80,6 +99,7 @@ export const useLLMGeneration = (config: any) => {
     generateScrollytelling,
     isGenerating,
     generatedHtml,
+    dataProfile,
     error,
     setError
   };
