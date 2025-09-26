@@ -1,6 +1,12 @@
 import { openaiConfig } from 'tailwind-llm-provider';
 
-const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+const DEFAULT_BASE_URL = "https://openrouter.ai/api/v1";
+
+const COMMON_BASE_URLS = [
+  { url: "https://openrouter.ai/api/v1", name: "OpenRouter" },
+  { url: "https://api.aipipe.ai/v1", name: "AI Pipe" },
+  { url: "https://api.llmfoundry.ai/v1", name: "LLM Foundry" }
+];
 
 const AVAILABLE_MODELS = [
   { id: "google/gemini-2.5-flash", name: "Gemini 2.5 Flash", provider: "Google" },
@@ -15,7 +21,7 @@ export async function getLLMConfig() {
   try {
     const config = await openaiConfig({
       show: false,
-      defaultBaseUrls: [OPENROUTER_BASE_URL],
+      defaultBaseUrls: [DEFAULT_BASE_URL],
       title: "OpenRouter Configuration",
       help: "Configure your OpenRouter API key to access multiple AI models."
     });
@@ -23,6 +29,11 @@ export async function getLLMConfig() {
     // Add default model if not set
     if (config && !config.model) {
       config.model = AVAILABLE_MODELS[0].id;
+    }
+    
+    // Add default base URL if not set
+    if (config && !config.baseUrl) {
+      config.baseUrl = DEFAULT_BASE_URL;
     }
     
     return config;
@@ -34,7 +45,7 @@ export async function getLLMConfig() {
 export async function showLLMConfigModal() {
   const config = await openaiConfig({
     show: true,
-    defaultBaseUrls: [OPENROUTER_BASE_URL],
+    defaultBaseUrls: [DEFAULT_BASE_URL],
     title: "Configure OpenRouter",
     help: "Enter your OpenRouter API key to access multiple AI models including GPT, Claude, Gemini, and more."
   });
@@ -42,6 +53,11 @@ export async function showLLMConfigModal() {
   // Add default model if not set
   if (config && !config.model) {
     config.model = AVAILABLE_MODELS[0].id;
+  }
+  
+  // Add default base URL if not set
+  if (config && !config.baseUrl) {
+    config.baseUrl = DEFAULT_BASE_URL;
   }
   
   return config;
@@ -61,7 +77,8 @@ export async function* generateResponseStream(config: any, prompt: string, optio
 
   const model = config.model || AVAILABLE_MODELS[0].id;
 
-  const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
+  const baseUrl = config.baseUrl || DEFAULT_BASE_URL;
+  const response = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
     headers,
     body: JSON.stringify({
@@ -137,6 +154,10 @@ export function isConfigured(config: any) {
 
 export function getAvailableModels() {
   return AVAILABLE_MODELS;
+}
+
+export function getCommonBaseUrls() {
+  return COMMON_BASE_URLS;
 }
 
 export function getProviderConfig() {

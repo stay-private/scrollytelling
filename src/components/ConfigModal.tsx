@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Settings, Check, AlertCircle, Zap } from 'lucide-react';
-import { isConfigured, getAvailableModels } from '../utils/llmProvider';
+import { isConfigured, getAvailableModels, getCommonBaseUrls } from '../utils/llmProvider';
 
 interface ConfigModalProps {
   isOpen: boolean;
@@ -17,11 +17,14 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
 }) => {
   const [apiKey, setApiKey] = useState('');
   const [selectedModel, setSelectedModel] = useState('');
+  const [baseUrl, setBaseUrl] = useState('');
+  const [customBaseUrl, setCustomBaseUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   
   const configured = isConfigured(currentConfig);
   const availableModels = getAvailableModels();
+  const commonBaseUrls = getCommonBaseUrls();
 
   useEffect(() => {
     if (isOpen) {
@@ -29,8 +32,12 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
       if (currentConfig) {
         setApiKey(currentConfig.apiKey || '');
         setSelectedModel(currentConfig.model || availableModels[0].id);
+        setBaseUrl(currentConfig.baseUrl || commonBaseUrls[0].url);
+        setCustomBaseUrl('');
       } else {
         setSelectedModel(availableModels[0].id);
+        setBaseUrl(commonBaseUrls[0].url);
+        setCustomBaseUrl('');
       }
     }
   }, [isOpen, currentConfig]);
@@ -46,18 +53,24 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
       return;
     }
 
+    const finalBaseUrl = baseUrl === 'custom' ? customBaseUrl.trim() : baseUrl;
+    if (!finalBaseUrl) {
+      setError('Please enter a valid base URL');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
     
     try {
       const config = {
-        baseUrl: "https://openrouter.ai/api/v1",
+        baseUrl: finalBaseUrl,
         apiKey: apiKey.trim(),
         model: selectedModel
       };
 
       // Test the configuration with a simple request
-      const testResponse = await fetch('https://openrouter.ai/api/v1/models', {
+      const testResponse = await fetch(`${finalBaseUrl}/models`, {
         headers: {
           'Authorization': `Bearer ${config.apiKey}`,
           'Content-Type': 'application/json',
@@ -191,6 +204,91 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
                     </div>
                   </label>
                 ))}
+              </div>
+            </div>
+
+            {/* Base URL Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                API Provider
+              </label>
+              <div className="space-y-2">
+                {commonBaseUrls.map((provider) => (
+                  <label
+                    key={provider.url}
+                    className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                      baseUrl === provider.url
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="baseUrl"
+                      value={provider.url}
+                      checked={baseUrl === provider.url}
+                      onChange={(e) => setBaseUrl(e.target.value)}
+                      className="sr-only"
+                    />
+                    <div className={`w-4 h-4 rounded-full border-2 mr-3 ${
+                      baseUrl === provider.url
+                        ? 'border-blue-500 bg-blue-500'
+                        : 'border-gray-300'
+                    }`}>
+                      {baseUrl === provider.url && (
+                        <div className="w-2 h-2 bg-white rounded-full mx-auto mt-0.5"></div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900">{provider.name}</div>
+                      <div className="text-sm text-gray-500">{provider.url}</div>
+                    </div>
+                  </label>
+                ))}
+                
+                {/* Custom URL Option */}
+                <label
+                  className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                    baseUrl === 'custom'
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="baseUrl"
+                    value="custom"
+                    checked={baseUrl === 'custom'}
+                    onChange={(e) => setBaseUrl(e.target.value)}
+                    className="sr-only"
+                  />
+                  <div className={`w-4 h-4 rounded-full border-2 mr-3 ${
+                    baseUrl === 'custom'
+                      ? 'border-blue-500 bg-blue-500'
+                      : 'border-gray-300'
+                  }`}>
+                    {baseUrl === 'custom' && (
+                      <div className="w-2 h-2 bg-white rounded-full mx-auto mt-0.5"></div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">Custom URL</div>
+                    <div className="text-sm text-gray-500">Enter your own API endpoint</div>
+                  </div>
+                </label>
+                
+                {baseUrl === 'custom' && (
+                  <div className="ml-7 mt-2">
+                    <input
+                      type="url"
+                      value={customBaseUrl}
+                      onChange={(e) => setCustomBaseUrl(e.target.value)}
+                      placeholder="https://your-api-endpoint.com/v1"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      disabled={isLoading}
+                    />
+                  </div>
+                )}
               </div>
             </div>
 

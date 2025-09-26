@@ -1,6 +1,6 @@
 import React from 'react';
 import { Settings, Check, Zap } from 'lucide-react';
-import { getAvailableModels } from '../utils/llmProvider';
+import { getAvailableModels, getCommonBaseUrls } from '../utils/llmProvider';
 
 interface ConfigPanelProps {
   config: any;
@@ -10,11 +10,18 @@ interface ConfigPanelProps {
 
 export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, configured, onConfigureClick }) => {
   const availableModels = getAvailableModels();
+  const commonBaseUrls = getCommonBaseUrls();
 
   const getCurrentModel = () => {
     if (!config?.model) return 'No model selected';
     const model = availableModels.find(m => m.id === config.model);
     return model ? model.name : config.model;
+  };
+
+  const getCurrentProvider = () => {
+    if (!config?.baseUrl) return 'OpenRouter';
+    const provider = commonBaseUrls.find(p => p.url === config.baseUrl);
+    return provider ? provider.name : 'Custom';
   };
 
   return (
@@ -32,7 +39,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, configured, on
             <h2 className="text-xl font-semibold text-gray-800">OpenRouter Configuration</h2>
             <p className="text-sm text-gray-600">
               {configured 
-                ? `Using ${getCurrentModel()}`
+                ? `Using ${getCurrentModel()} via ${getCurrentProvider()}`
                 : 'Configure OpenRouter to access multiple AI models'
               }
             </p>
