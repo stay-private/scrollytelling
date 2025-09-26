@@ -1,15 +1,22 @@
 import React, { useEffect, useRef } from 'react';
 import { marked } from 'marked';
 import hljs from 'highlight.js/lib/core';
-import html from 'highlight.js/lib/languages/xml';
+import xml from 'highlight.js/lib/languages/xml';
 import css from 'highlight.js/lib/languages/css';
 import javascript from 'highlight.js/lib/languages/javascript';
+import json from 'highlight.js/lib/languages/json';
+import markdown from 'highlight.js/lib/languages/markdown';
 import 'highlight.js/styles/github.css';
 
 // Register languages
-hljs.registerLanguage('html', html);
+hljs.registerLanguage('html', xml);
+hljs.registerLanguage('xml', xml);
 hljs.registerLanguage('css', css);
 hljs.registerLanguage('javascript', javascript);
+hljs.registerLanguage('js', javascript);
+hljs.registerLanguage('json', json);
+hljs.registerLanguage('markdown', markdown);
+hljs.registerLanguage('md', markdown);
 
 interface StreamingDisplayProps {
   content: string;
@@ -24,22 +31,33 @@ export const StreamingDisplay: React.FC<StreamingDisplayProps> = ({ content, isS
       // Configure marked to use highlight.js
       marked.setOptions({
         highlight: function(code, lang) {
-          if (lang && hljs.getLanguage(lang)) {
+          const language = lang?.toLowerCase();
+          if (language && hljs.getLanguage(language)) {
             try {
-              return hljs.highlight(code, { language: lang }).value;
+              return hljs.highlight(code, { language }).value;
             } catch (err) {
               console.error('Highlight.js error:', err);
+              return hljs.highlightAuto(code).value;
             }
           }
           return hljs.highlightAuto(code).value;
         },
         breaks: true,
-        gfm: true
+        gfm: true,
+        langPrefix: 'hljs language-'
       });
 
       // Convert markdown to HTML
-      const htmlContent = marked(content);
+      const htmlContent = marked.parse(content);
       containerRef.current.innerHTML = htmlContent;
+
+      // Apply syntax highlighting to any code blocks that weren't caught by marked
+      const codeBlocks = containerRef.current.querySelectorAll('pre code');
+      codeBlocks.forEach((block) => {
+        if (!block.classList.contains('hljs')) {
+          hljs.highlightElement(block as HTMLElement);
+        }
+      });
 
       // Scroll to bottom if streaming
       if (isStreaming) {
@@ -64,7 +82,7 @@ export const StreamingDisplay: React.FC<StreamingDisplayProps> = ({ content, isS
       
       <div 
         ref={containerRef}
-        className="p-6 max-h-96 overflow-y-auto prose prose-sm max-w-none"
+        className="p-6 max-h-96 overflow-y-auto prose prose-sm max-w-none bg-gray-50"
         style={{
           fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace'
         }}
